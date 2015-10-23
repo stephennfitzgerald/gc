@@ -11,12 +11,19 @@ my $dbh = get_schema();
 while(<>){
  chomp;
  my($name,$fr,$to) = split"\t",$_;
- push@{ $H{ $name }{ length($fr) }{ substr $fr, 0, 1 } }, [$fr,$to];
+ push@{ $H{ $name } }, [$fr,$to];
 }
 
 my $blob = nfreeze \%H;
 
 $dbh->do('INSERT INTO feature (assembly_id, feature_type, feature) VALUES(?,?,?)', undef, 1, 'exon', $blob);
+
+
+my $bs = $dbh->selectrow_array("select feature from feature");
+
+my $data_str = thaw $bs;
+
+print Dumper $data_str;
 
 
 sub get_schema { 

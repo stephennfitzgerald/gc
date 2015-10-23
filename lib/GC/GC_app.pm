@@ -32,13 +32,20 @@ post '/get_input_data' => sub {
   my (%NOL, %SEEN);
 
   if(my $sel_species = param('selected_species')) {
+   my($species_name, $assembly_name) = split'::', $sel_species;
    if(my $sel_feature = param('selected_feature')) {
+    my $binary_str = $dbh->selectrow_array("SELECT feature
+                                            FROM feature ft 
+                                            INNER JOIN assembly ass
+                                            WHERE ft.feature_type = \"$sel_feature\" 
+                                            AND ass.name = \"$assembly_name\"");
+    my $data_str = thaw $binary_str;
+    
     if(my $sel_file = upload('selected_file')) {
      my $sel_file_name = $sel_file->tempname;
      $sel_file_name =~ s/.*\///xms;
      $sel_file->copy_to("$file_dir");
      open IN, "$file_dir/$sel_file_name" or croak("can't open file $file_dir/$sel_file_name");
-     my $regions_sth = $dbh->do("CALL get_feature(?,?)", undef, );
      while(my $line = <IN>) {
       next if $line=~/##/;
       chomp($line);
@@ -50,10 +57,39 @@ post '/get_input_data' => sub {
       } else {
        $SEEN{ $fp }++;
       }
-     }  
+      my $feature_range = $data_str->{ $sr };
+      if($feature_range) {
+       for(my$i=0;$i<@{ $feature_range };$i++) {
+        my($feat_from, $feat_to) = ($feature_range->[$i]->[0], $feature_range->[$i]->[1]); 
+        if($fr <= $feat_to && $to >= $feat_from) { # overlap
+         my $end_ol = $to - $feat_to > 0 ? $to : $feat_from - 1;
+         my $str_ol = $feat_from - $fr > 0 ? $fr : $feat_to + 1;
+         if($end_ol == ($feat_from - 1) && $str_ol == ($feat_to + 1)) {
+          last; # skip - input frag is fully covered by a feature
+         }
+         elsif($str_ol == $fr && $end_ol == ($feat_from - 1)) { # 5' end of feature overlaps 3' end of frag
+          push@{ $NOL{ $sr } }, [$str_ol, $end_ol];
+         }
+         elsif($str_ol == ($feat_to + 1) && $end_ol == $to) { # 3' end of feature overlaps 5' end of frag
+          $fr = $str_ol;
+         }
+         elsif($str_ol == $fr && $end_ol == $to) { # split frag  - feature is fully covered by frag 
+          push@{ $NOL{ $sr } }, [$fr, $feat_from - 1];
+          $fr = $feat_to + 1;
+         }
+        }
+        elsif($feat_from > $to) { # no overlap - keep
+         push@{ $NOL{ $sr } }, [$fr, $to];
+         last;
+        }
+       }
+      }
+     }
     }
    }
   }
+print Dumper \%NOL;
+ 
  template 'index', {
   'species_lst'    => $species_lst,
   'feature_lst'    => $feature_lst,
