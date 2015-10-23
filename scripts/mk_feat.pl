@@ -10,8 +10,8 @@ my $dbh = get_schema();
 
 while(<>){
  chomp;
- my($name,$fr,$to) = split"\t",$_;
- push@{ $H{ $name } }, [$fr,$to];
+ my($name,$fr,$to,$set_id) = split"\t",$_;
+ push@{ $H{ $name } }, [$fr,$to,$set_id];
 }
 
 my $blob = nfreeze \%H;

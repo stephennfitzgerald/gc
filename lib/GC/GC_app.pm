@@ -10,6 +10,7 @@ use Data::Dumper;
 our $VERSION = '0.1';
 our $db_name = 'gencode_sf5_gc';
 our $file_dir = 'public/uploaded_files'; 
+our $set_id = 'B';
 
 
 get '/' => sub {
@@ -29,7 +30,7 @@ post '/get_input_data' => sub {
   my $species_lst = get_species();
   my $feature_lst = get_features();
   my $dbh = get_schema();
-  my (%NOL, %SEEN);
+  my (%GEN, %SEEN);
 
   if(my $sel_species = param('selected_species')) {
    my($species_name, $assembly_name) = split'::', $sel_species;
@@ -57,38 +58,61 @@ post '/get_input_data' => sub {
       } else {
        $SEEN{ $fp }++;
       }
-      my $feature_range = $data_str->{ $sr };
-      if($feature_range) {
-       for(my$i=0;$i<@{ $feature_range };$i++) {
-        my($feat_from, $feat_to) = ($feature_range->[$i]->[0], $feature_range->[$i]->[1]); 
-        if($fr <= $feat_to && $to >= $feat_from) { # overlap
-         my $end_ol = $to - $feat_to > 0 ? $to : $feat_from - 1;
-         my $str_ol = $feat_from - $fr > 0 ? $fr : $feat_to + 1;
-         if($end_ol == ($feat_from - 1) && $str_ol == ($feat_to + 1)) {
-          last; # skip - input frag is fully covered by a feature
-         }
-         elsif($str_ol == $fr && $end_ol == ($feat_from - 1)) { # 5' end of feature overlaps 3' end of frag
-          push@{ $NOL{ $sr } }, [$str_ol, $end_ol];
-         }
-         elsif($str_ol == ($feat_to + 1) && $end_ol == $to) { # 3' end of feature overlaps 5' end of frag
-          $fr = $str_ol;
-         }
-         elsif($str_ol == $fr && $end_ol == $to) { # split frag  - feature is fully covered by frag 
-          push@{ $NOL{ $sr } }, [$fr, $feat_from - 1];
-          $fr = $feat_to + 1;
-         }
-        }
-        elsif($feat_from > $to) { # no overlap - keep
-         push@{ $NOL{ $sr } }, [$fr, $to];
-         last;
-        }
+      push@{ $GEN{$sr} }, [$fr, $to, $set_id];
+     }
+     ## merge overlapping coords from the input file
+     foreach my $sr(keys %GEN) {
+      for(my$i=0;$i<@{ $GEN{ $sr } }-1;$i++) {
+       if( $GEN{ $sr }->[$i]->[1] >= $GEN{ $sr }->[$i+1]->[0] ) { 
+        if( $GEN{ $sr }->[$i]->[1] < $GEN{ $sr }->[$i+1]->[1] ) { 
+         $GEN{ $sr }->[$i]->[1] = $GEN{ $sr }->[$i+1]->[1];
+        }   
+        splice @{ $GEN{ $sr } }, $i+1, 1;
+        $i--;
        }
+      }
+     }
+     ## merge the input coords with the feature set from the db
+     foreach my $sr(keys %GEN) {
+      push@{ $GEN{$sr} }, @{ $data_str->{$sr} };
+      @{ $GEN{$sr} } = sort {$a->[0] <=> $b->[0]} @{ $GEN{$sr} };
+     }
+     
+     foreach my $sr(keys %GEN) {
+      for(my$i=0;$i<@{ $GEN{ $sr } } - 1;$i++) {
+       next if( $GEN{ $sr }->[$i]->[2] eq $GEN{ $sr }->[$i+1]->[2] );
+       if( $GEN{ $sr }->[$i]->[1] >= $GEN{ $sr }->[$i+1]->[0] ) {
+        if( $GEN{ $sr }->[$i]->[1] <= $GEN{ $sr }->[$i+1]->[1] ) {
+         my $ol_str = $GEN{ $sr }->[$i+1]->[0];
+         my $ol_end = $GEN{ $sr }->[$i]->[1];
+         if( $GEN{ $sr }->[$i]->[0] == $ol_str ) {
+          $GEN{ $sr }->[$i]->[2] = 'O';
+          if( $GEN{ $sr }->[$i+1]->[1] == $ol_end ) { ## complete overlap (4)
+           splice @{ $GEN{ $sr } }, $i+1, 1;
+          } else { ## (3)
+           $GEN{ $sr }->[$i]->[1] = $ol_str - 1;
+           $GEN{ $sr }->[$i+1]->[0] = $ol_end + 1;
+          }
+         } else { ## partial overlap (1) + (2)
+          $GEN{ $sr }->[$i]->[1] = $ol_str - 1;
+          $GEN{ $sr }->[$i+1]->[0] = $ol_end + 1;
+          splice @{ $GEN{ $sr } }, $i, 0, [ $ol_str, $ol_end, 'O' ];
+         }
+        } else { ## overlap extends past second element (5)
+         $GEN{ $sr }->[$i+1]->[2] = 'O';
+         $GEN{ $sr }->[$i]->[1] = $GEN{ $sr }->[$i+1]->[0] - 1;
+         splice @{ $GEN{ $sr } }, $i+1, 0, [ ($GEN{ $sr }->[$i+1]->[1] + 1), $GEN{ $sr }->[$i]->[1], $GEN{ $sr }->[$i]->[2] ];
+         $GEN{ $sr }->[$i]->[1] = $GEN{ $sr }->[$i+1]->[0] - 1;
+         $i++;
+       }  
       }
      }
     }
    }
   }
-print Dumper \%NOL;
+ }
+
+print Dumper \%GEN;
  
  template 'index', {
   'species_lst'    => $species_lst,
