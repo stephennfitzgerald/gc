@@ -6,8 +6,8 @@ my%A;
 
 while(<>){
  chomp;
- my($sr,$fr,$to)=split"\t",$_;
- push@{ $A{$sr} }, [$fr, $to];
+ my($sr,$fr,$to,$ty,$anno)=split"\t",$_;
+ push@{ $A{$sr} }, [$fr, $to, $ty, [ $anno ] ];
 }
 
 foreach my $sr(keys %A) {
@@ -16,6 +16,7 @@ foreach my $sr(keys %A) {
    if( $A{ $sr }->[$i]->[1] < $A{ $sr }->[$i+1]->[1] ) {
     $A{ $sr }->[$i]->[1] = $A{ $sr }->[$i+1]->[1];
    }
+   push @{ $A{ $sr }->[$i]->[3] }, @{ $A{ $sr }->[$i+1]->[3] };
    splice @{ $A{ $sr } }, $i+1, 1;
    $i--;
   }
@@ -24,6 +25,11 @@ foreach my $sr(keys %A) {
 
 foreach my $sr(sort keys %A) {
  foreach my $ele(@{ $A{$sr} }) {
-  print join("\t", $sr, @{ $ele }), "\n";
+  my %E;
+  foreach my $anno(@{ $ele->[3] }) {
+   $E{ $anno }++;
+  }
+  my $anno_merge = join"::", keys %E;
+  print join("\t", $sr, $ele->[0], $ele->[1], $ele->[2], $anno_merge), "\n";
  }
 }

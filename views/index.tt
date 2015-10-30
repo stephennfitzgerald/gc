@@ -51,7 +51,7 @@ body {
     <p><p>
     <table class="box">
      <form action="<% get_input_data_url %>" method="post" enctype="multipart/form-data"> 
-      <tr><td>species::assembly&nbsp;&nbsp;&nbsp;&nbsp;
+      <tr><td>species::assembly&nbsp;&nbsp;&nbsp;
        </td><td>
        <select class="dropdown" name="selected_species" required>
         <% FOREACH sp_ass IN species_lst %>
@@ -63,9 +63,7 @@ body {
         <% END %>
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
-       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
-       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
-       </td><td>feature&nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>feature&nbsp;&nbsp;&nbsp;
        </td><td>
        <select class="dropdown" name="selected_feature" required>
         <% FOREACH feat IN feature_lst %>
@@ -77,13 +75,21 @@ body {
         <% END %>
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>file&nbsp;format&nbsp;&nbsp;&nbsp;
+       </td><td>
+       <select class="dropdown" name="selected_file_format" required>
+        <% FOREACH sff IN file_formats %>
+         <% IF sff == 'select' %>
+          <option value disabled selected> -- select -- </option>
+         <% ELSE %>
+          <option value="<% sff %>"><% sff %></option>
+         <% END %>
+        <% END %>
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
-       </td><td>file&nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>file&nbsp;&nbsp;&nbsp;
        </td><td>
         <input type="file" class="button" name="selected_file" required>
-       </td></tr>
-       <tr><td>&nbsp;
        </td></tr>
        <tr><td>&nbsp;
        </td></tr>
