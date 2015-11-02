@@ -87,9 +87,22 @@ body {
         <% END %>
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
        </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>return&nbsp;type&nbsp;&nbsp;&nbsp;
+       </td><td>
+       <select class="dropdown" name="return_type" required>
+        <% FOREACH r_type IN return_type %>
+         <% IF r_type == 'select' %>
+          <option value disabled selected> -- select -- </option>
+         <% ELSE %>
+          <option value="<% r_type %>"><% r_type %></option>
+         <% END %>
+        <% END %>
+       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
        </td><td>file&nbsp;&nbsp;&nbsp;
        </td><td>
         <input type="file" class="button" name="selected_file" required>
+       </td><td>
        </td></tr>
        <tr><td>&nbsp;
        </td></tr>

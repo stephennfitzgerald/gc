@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<script>
+
+function openWin(img){
+   var path = "images/";
+   window.open(path+img,"mywin","menubar=0,resizable=1,width=10,height=20");
+}
+
+function goBack() 
+  {
+    window.history.back();
+  }
+function goHome()
+  {
+    window.location = '/';   
+  }
+</script>
+
+
+<head>
+<style  type="text/css">
+
+body {
+    background-image: url("images/gencode.png");
+    background-repeat: no-repeat;
+    background-size:40% 200%;
+    background-position: top left;
+    background-color: white;
+}
+
+.box {
+    width:30px;
+    height:30px;
+    background-color:#FFFFFF;
+    position:fixed;
+    margin-left:-50px;
+    margin-top:-50px; 
+    top:50%;
+    left:10%;
+}
+
+</style>
+</head>
+
+<body>
+<div id="page">
+ <div id="sidebar">
+  </div>
+    <p><p>
+    <table class="box">
+     <tr>
+      <td>number&nbsp;of&nbsp;<% sel_feat %>&nbsp;(A)&nbsp;bases:</td><td><% stats.AT %></td></tr>
+      <tr><td>number&nbsp;of&nbsp;input&nbsp;(B)&nbsp;bases:</td><td><% stats.BT %></td></tr>
+      <tr><td>number&nbsp;of&nbsp;overlapping&nbsp;bases:</td><td><% stats.O %>&nbsp;(A&nbsp;=&nbsp;<% stats.AP %>%)&nbsp;(B&nbsp;=&nbsp;<% stats.BP %>%)</td></tr>
+      <tr><td>number&nbsp;of&nbsp;non&nbsp;-&nbsp;overlapping&nbsp;bases:</td><td>A&nbsp;=&nbsp;<% stats.A %>&nbsp;(<% stats.AN %>%)&nbsp;;&nbsp;B&nbsp;=&nbsp;<% stats.B %>&nbsp;(<% stats.BN %>%)</td></tr>
+     </tr><tr><td></td>
+     </tr><tr><td></td>
+     </tr><tr><td></td>
+     <tr><td>output&nbsp;file</td><td><a href="<% out_file %>" download><button type="button">download &#8595;</button></a></td></tr>
+     <tr><td></td></tr>
+     </tr><tr><td></td>
+     </tr><tr><td></td>
+     </tr><tr><td></td>
+     <tr><td><button onclick="goHome()">Home</button></td><td></td></tr> 
+    </table>
+  </div>
+ </div>
+</div>

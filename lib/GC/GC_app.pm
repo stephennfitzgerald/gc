@@ -13,6 +13,7 @@ our $public_dir = './public/';
 our $out_file_dir = 'uploaded_files'; 
 our $set_id = 'B'; # id for input data ( feature data is 'A' )
 our @file_formats = ('select', '0-based (BED)', '1-based');
+our @return_type = ('select', 'novel', 'all');
 
 get '/' => sub {
 
@@ -23,6 +24,7 @@ get '/' => sub {
    'species_lst'    => $species_lst,
    'feature_lst'    => $feature_lst,
    'file_formats'   => \@file_formats,
+   'return_type'    => \@return_type,
    'get_input_data_url' => uri_for('/get_input_data'),
   };
 
@@ -125,8 +127,8 @@ post '/get_input_data' => sub {
          $GEN{ $sr }->[$i+1]->[2] = 'O';
          my $temp_end = $GEN{ $sr }->[$i]->[1];
          $GEN{ $sr }->[$i]->[1] = $GEN{ $sr }->[$i+1]->[0] - 1;
-         my $anno = $GEN{ $sr }->[$i]->[3] ? $GEN{ $sr }->[$i]->[3] : $GEN{ $sr }->[$i+1]->[3];
-         splice @{ $GEN{ $sr } }, $i+2, 0, [ ($GEN{ $sr }->[$i+1]->[1] + 1), $temp_end, $GEN{ $sr }->[$i]->[2], $anno ];
+#         my $anno = $GEN{ $sr }->[$i]->[3] ? $GEN{ $sr }->[$i]->[3] : $GEN{ $sr }->[$i+1]->[3];
+         splice @{ $GEN{ $sr } }, $i+2, 0, [ ($GEN{ $sr }->[$i+1]->[1] + 1), $temp_end, $GEN{ $sr }->[$i]->[2] ];
          $GEN{ $sr }->[$i]->[1] = $GEN{ $sr }->[$i+1]->[0] - 1;
          if($GEN{ $sr }->[$i]->[1] < $GEN{ $sr }->[$i]->[0]) { ## start of first == start of second element
           splice @{ $GEN{ $sr } }, $i , 1;
@@ -146,9 +148,60 @@ post '/get_input_data' => sub {
   open OUT, ">$out_file" or croak("can't open file $out_file"); 
   my $subtr = $sel_file_format eq '0-based (BED)' ? 1 : 0;
   foreach my $sr( keys %GEN ) {
+   for(my$i=0;$i<@{ $GEN{ $sr } };$i++) {
+    if($i == 0 && scalar@{ $GEN{ $sr } } > 1) { # first elemen and there are > 1 elements
+     if( $GEN{ $sr }->[$i]->[2] eq 'B' ) {
+      if( ( $GEN{ $sr }->[$i]->[1] + 1 ) == $GEN{ $sr }->[$i+1]->[0] ) {
+       $GEN{ $sr }->[$i]->[3] = 'extension';
+      } else {
+       $GEN{ $sr }->[$i]->[3] = 'novel';
+      }
+     }
+     else {
+      $GEN{ $sr }->[$i]->[3] = '';
+     }
+    }
+    elsif($i == scalar@{ $GEN{ $sr } } - 1 && scalar@{ $GEN{ $sr } } > 1) { # last element and there are > 1 elements
+     if( $GEN{ $sr }->[$i]->[2] eq 'B' ) { 
+      if( ( $GEN{ $sr }->[$i]->[0] - 1 ) == $GEN{ $sr }->[$i-1]->[1] ) {
+       $GEN{ $sr }->[$i]->[3] = 'extension';
+      } else {
+       $GEN{ $sr }->[$i]->[3] = 'novel';
+      }
+     }
+     else {
+      $GEN{ $sr }->[$i]->[3] = '';
+     }
+    } 
+    elsif(scalar@{ $GEN{ $sr } } > 1) { # not the first or last element
+     if( $GEN{ $sr }->[$i]->[2] eq 'B' ) {
+      if( ( $GEN{ $sr }->[$i]->[0] - 1 ) == $GEN{ $sr }->[$i-1]->[1] || ( $GEN{ $sr }->[$i]->[1] + 1 ) == $GEN{ $sr }->[$i+1]->[0] ) {
+       $GEN{ $sr }->[$i]->[3] = 'extension';
+      } else {
+       $GEN{ $sr }->[$i]->[3] = 'novel';
+      }
+     }
+     else {
+      $GEN{ $sr }->[$i]->[3] = '';
+     }
+    }
+    else { # there is only one element
+     if( $GEN{ $sr }->[$i]->[2] eq 'B' ) {
+      $GEN{ $sr }->[$i]->[3] = 'novel';
+     }
+    }
+   }   
+  }
+  my $ret_type = param('return_type');
+  foreach my $sr( keys %GEN ) {
    foreach my $loc( @{ $GEN{ $sr } } ) {
     $STATS{ $loc->[2] } += $loc->[1] - $loc->[0] + 1;
-    print OUT join("\t", $sr, ($loc->[0] - $subtr), $loc->[1], $CV{ $loc->[2] }), "\n";
+    if( $ret_type eq 'all' ) { # print all results 
+     print OUT join("\t", $sr, ($loc->[0] - $subtr), $loc->[1], $CV{ $loc->[2] }, $loc->[3]), "\n";
+    } 
+    elsif( $ret_type eq 'novel' && ( $loc->[3] eq 'extension' || $loc->[3] eq 'novel' )) { # only print the novel bits
+     print OUT join("\t", $sr, ($loc->[0] - $subtr), $loc->[1], $CV{ $loc->[2] }, $loc->[3]), "\n";
+    }
    }
   }
   close OUT;
