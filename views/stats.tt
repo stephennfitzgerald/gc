@@ -58,7 +58,7 @@ body {
      </tr><tr><td></td>
      </tr><tr><td></td>
      </tr><tr><td></td>
-     <tr><td>output&nbsp;file</td><td><a href="<% out_file %>" download><button type="button">download &#8595;</button></a></td></tr>
+     <tr><td>output&nbsp;file:</td><td><a href="<% out_file %>" download><button type="button">download &#8595;</button></a></td></tr>
      <tr><td></td></tr>
      </tr><tr><td></td>
      </tr><tr><td></td>

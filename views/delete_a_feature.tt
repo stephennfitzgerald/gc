@@ -51,21 +51,26 @@ body {
     <p><p>
     <table class="box">
      <tr><td>&nbsp;</td></tr>
-     <form action="<% upload_a_file_url %>" method="post" enctype="multipart/form-data">
-      <tr><td>upload&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</td><td>
-       <input type=submit value="&#8594;">
-      </td></tr>
-     </form>
-     <form action="<% check_for_overlaps_url %>" method="get">
-      <tr><td>&nbsp;</td></tr>
-      <tr><td>check&nbsp;for&nbsp;overlaps&nbsp;&nbsp;&nbsp;</td><td>
-       <input type=submit value="&#8594;">
-      </td></tr>
-     </form>
      <form action="<% delete_a_feature_url %>" method="get">
       <tr><td>&nbsp;</td></tr>
-      <tr><td><font color="red">delete&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</font></td><td>
-       <input type=submit value="&#8594;">
+      <tr><td>delete&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</td><td>
+       <select class="dropdown" name="feat_id" required>
+        <% FOREACH feat IN species_features %>
+         <% IF feat == 'select' %>
+          <option value disabled selected> -- select -- </option>
+         <% ELSE %>
+          <option value="<% feat.0 %>"><% feat.1 %></option>
+         <% END %>
+        <% END %>
+      </td><td>&nbsp;&nbsp;&nbsp;</td><td>
+      <input type="submit" value="Submit">
+      </td></tr>
+      <tr><td>&nbsp;
+      </td></tr>
+      <tr><td>
+       <button onclick="goHome()">Home</button>
+       </td><td>
+       <input type="reset" value="Clear">
       </td></tr>
      </form>
     </table>
