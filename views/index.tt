@@ -62,6 +62,12 @@ body {
        <input type=submit value="&#8594;">
       </td></tr>
      </form>
+     <form action="<% download_a_feature_url %>" method="get">
+      <tr><td>&nbsp;</td></tr>
+      <tr><td>download&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</td><td>
+       <input type=submit value="&#8594;">
+      </td></tr>
+     </form>
      <form action="<% delete_a_feature_url %>" method="get">
       <tr><td>&nbsp;</td></tr>
       <tr><td><font color="red">delete&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</font></td><td>

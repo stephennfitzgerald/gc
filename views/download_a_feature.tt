@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<script>
+
+function openWin(img){
+   var path = "images/";
+   window.open(path+img,"mywin","menubar=0,resizable=1,width=10,height=20");
+}
+
+function goBack() 
+  {
+    window.history.back();
+  }
+function goHome()
+  {
+    window.location = '/';   
+  }
+</script>
+
+
+<head>
+<style  type="text/css">
+
+body {
+    background-image: url("images/gencode.png");
+    background-repeat: no-repeat;
+    background-size:40% 200%;
+    background-position: top left;
+    background-color: white;
+}
+
+.box {
+    width:30px;
+    height:30px;
+    background-color:#FFFFFF;
+    position:fixed;
+    margin-left:-50px;
+    margin-top:-50px; 
+    top:50%;
+    left:10%;
+}
+
+</style>
+</head>
+
+<body>
+<div id="page">
+ <div id="sidebar">
+  </div>
+    <p><p>
+    <table class="box">
+     <tr><td>&nbsp;</td></tr>
+     <form action="<% download_a_feature_url %>" method="get">
+      <tr><td>&nbsp;</td></tr>
+      <tr><td>choose&nbsp;a&nbsp;feature&nbsp;&nbsp;&nbsp;</td><td>
+       <select class="dropdown" name="feat_id" required>
+        <% FOREACH feat IN species_features %>
+         <% IF feat == 'select' %>
+          <option value disabled selected> -- select -- </option>
+         <% ELSE %>
+          <option value="<% feat.0 %>"><% feat.1 %></option>
+         <% END %>
+        <% END %>
+      </td><td>&nbsp;&nbsp;&nbsp;</td><td>
+       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>file&nbsp;format&nbsp;&nbsp;&nbsp;
+       </td><td>
+       <select class="dropdown" name="selected_file_format" required>
+        <% FOREACH sff IN file_formats %>
+         <% IF sff == 'select' %>
+          <option value disabled selected> -- select -- </option>
+         <% ELSE %>
+          <option value="<% sff %>"><% sff %></option>
+         <% END %>
+        <% END %>
+       </td><td> &nbsp;&nbsp;&nbsp;&nbsp;
+       </td><td>
+       <% IF feature_file %>
+        <a href="<% feature_file %>" download><button type="button" style="background-color:lightgreen" onClick="location.href = document.referrer;">Download</button></a>
+       <% ELSE %>
+        <input type="submit" value="Submit">
+       <% END %>
+      </td></tr>
+      <tr><td>&nbsp;
+      </td></tr>
+      <tr><td>
+       <button onclick="goHome()">Home</button>
+       </td><td>
+       <input type="reset" value="Clear">
+      </td></tr>
+     </form>
+    </table>
+  </div>
+ </div>
+</div>

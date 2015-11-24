@@ -5,6 +5,7 @@ use Dancer2;
 use DBI;
 use Carp;
 use Storable qw(nfreeze thaw);
+use String::Random qw(random_regex);
 use Data::Dumper;
 
 our $VERSION = '0.1';
@@ -23,8 +24,50 @@ get '/' => sub {
   'check_for_overlaps_url' => uri_for('/check_for_overlaps'), 
   'upload_a_file_url'      => uri_for('/upload_a_file'),
   'delete_a_feature_url'   => uri_for('/delete_a_feature'),
+  'download_a_feature_url' => uri_for('/download_a_feature'),
  };
 };
+
+get '/download_a_feature' => sub {
+
+ my $dbh = get_schema();
+ my $feature_file;
+ my $sfv_sth = $dbh->prepare("SELECT * FROM SpeciesFeatureView");
+ $sfv_sth->execute;
+ my $species_features = $sfv_sth->fetchall_arrayref;
+ unshift @{ $species_features }, 'select';
+ if(my $feature_id = param('feat_id')) {
+  if(my $sff = param('selected_file_format')) {
+   my $binary_str = $dbh->selectrow_array("SELECT feature
+                                           FROM feature 
+                                           WHERE id = $feature_id");
+   if($binary_str) {
+    my $data_str = thaw $binary_str;
+    my $add_to_fr = $sff eq '0-based (BED)' ? -1 : 0;
+    my $dir = $public_dir . $out_file_dir;
+    my $file_name = 'feature_' . random_regex('\w'x15) . '.txt'; 
+    $feature_file = $dir . "/$file_name";
+    open IN, q{>},  $feature_file or croak("can't open file $feature_file"); 
+    foreach my $sr(sort keys %{ $data_str }) {
+     foreach my $region(@{ $data_str->{$sr} }) {
+      print IN join("\t", $sr, ($region->[0] + $add_to_fr), $region->[1]), "\n";
+     }
+    }
+    close IN;
+    $feature_file = $out_file_dir . "/$file_name";
+   } 
+  }
+ }
+
+
+ template 'download_a_feature', {
+  'file_formats'           => \@file_formats,
+  'species_features'       => $species_features,
+  'download_a_feature_url' => uri_for('/download_a_feature'),
+  'feature_file'           => $feature_file,
+ };
+};
+
 
 get '/delete_a_feature' => sub {
  
@@ -57,7 +100,6 @@ post '/upload_a_file' => sub {
 
  if( $sff && $ifn && $sas && $sel_file ) {
   my $dbh = get_schema();
-  $template = 'index';
   my $file_info = open_file($sel_file);
   my $fh = $file_info->[0];
   $add_to_fr = $sff eq '0-based (BED)' ? $add_to_fr + 1 : $add_to_fr;
@@ -66,6 +108,7 @@ post '/upload_a_file' => sub {
    next if $line=~/^#/;
    chomp $line;
    my($sr,$fr,$to,$ty)=split"\t",$line;
+   $sr=~s/^chr_*//i;
    $fr += $add_to_fr;
    push@{ $A{$sr} }, [ $fr, $to, $feat_id, $ifn ];
   }
@@ -90,17 +133,17 @@ post '/upload_a_file' => sub {
    $dbh->do('INSERT INTO feature (assembly_id, feature_type, feature) VALUES(?,?,?)', undef, $sas, "$ifn", $blob);
   } else {
    $err_str = 1;
-   $template = 'upload_a_file';
   }
  }
 
- template "$template", {
+ template 'upload_a_file', {
   'err_str'        => $err_str,
   'species_lst'    => $species_lst,
   'feature_lst'    => $feature_lst,
   'file_formats'   => \@file_formats,
   'return_type'    => \@return_type,
   'check_for_overlaps_url' => uri_for('/check_for_overlaps'),
+  'delete_a_feature_url'   => uri_for('/delete_a_feature'),
   'upload_a_file_url'      => uri_for('/upload_a_file'),
  };
 };
@@ -154,7 +197,7 @@ post '/get_input_data' => sub {
        my($sr,$fr,$to) = split"\t",$line;
        ## if the input is in BED format - increment the first base
        $fr = $sel_file_format eq '0-based (BED)' ? $fr + 1 : $fr;
-       $sr=~s/chr//i;
+       $sr=~s/^chr_*//i;
        my $fp = $sr . $fr . $to;
        if(exists($SEEN{ $fp })) {
         next;
